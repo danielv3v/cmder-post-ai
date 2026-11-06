@@ -18,6 +18,14 @@ npm start
 
 `npm install` also downloads the Electron binary. If `npm start` says Electron failed to install, run `node node_modules/electron/install.js`.
 
+### Build Cmder.exe
+
+```
+npm run package
+```
+
+This produces `release/Cmder-win32-x64/Cmder.exe` (a ~325 MB folder, mostly the Chromium runtime). The exe finds its Cmder folder by walking up from where it sits, so it runs from `release/` or from a copy of that folder placed anywhere inside a Cmder install (for example `vendor/cmder-ui/`).
+
 The shells load Cmder from the folder that contains `frontend/`. That folder needs the vendored tools a Cmder build downloads (`vendor/clink`, and optionally `vendor/git-for-windows`); run `scripts/build.ps1` or copy them from a Cmder release. To use a different Cmder install, set **Settings → Shells → Cmder folder**. If no vendored Git is found, the Bash profile falls back to `C:\Program Files\Git\bin\bash.exe`.
 
 ## Keys

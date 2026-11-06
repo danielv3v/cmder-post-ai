@@ -11,8 +11,22 @@ const { THEMES } = require('../shared/themes');
 
 const DEV = process.argv.includes('--dev');
 const APP_DIR = path.resolve(__dirname, '..', '..');
-// The Cmder folder that hosts this app (frontend/ sits in the Cmder root).
-const HOST_ROOT = path.resolve(APP_DIR, '..');
+
+// The Cmder folder that hosts this app. From source, frontend/ sits in the Cmder
+// root. Packaged, the exe can live anywhere inside a Cmder folder (for example
+// frontend/release/Cmder-win32-x64), so walk up until vendor/init.bat shows up.
+function findHostRoot() {
+  const start = app.isPackaged ? path.dirname(process.execPath) : APP_DIR;
+  for (let dir = start; ; dir = path.dirname(dir)) {
+    if (fs.existsSync(path.join(dir, 'vendor', 'init.bat'))) return dir;
+    if (path.dirname(dir) === dir) break;
+  }
+  if (process.env.CMDER_ROOT && fs.existsSync(path.join(process.env.CMDER_ROOT, 'vendor', 'init.bat'))) {
+    return process.env.CMDER_ROOT;
+  }
+  return app.isPackaged ? path.dirname(process.execPath) : path.resolve(APP_DIR, '..');
+}
+const HOST_ROOT = findHostRoot();
 const CONFIG_DIR = process.env.CMDER_UI_CONFIG || path.join(HOST_ROOT, 'config');
 const SETTINGS_FILE = path.join(CONFIG_DIR, 'user-ui.json');
 const THEMES_DIR = path.join(CONFIG_DIR, 'themes');
