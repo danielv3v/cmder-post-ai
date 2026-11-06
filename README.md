@@ -358,6 +358,10 @@ However, Cmder can in fact run in a variety of other terminal emulators, and eve
 
 For instructions on how to integrate Cmder with your IDE, please read our [Wiki section](https://github.com/cmderdev/cmder/wiki#cmder-integration).
 
+### Cmder window (preview)
+
+[`frontend/`](frontend/README.md) contains a new, minimal window for Cmder's shells as an alternative to ConEmu's UI. It has no title bar, a theme-colored tab bar at the bottom, tabs you can rename and drag, Alt+Click to split tabs together, and themes and fonts under `/settings`. Run it with `npm install` and `npm start` in that folder.
+
 ## Upgrading
 
 The process of upgrading Cmder depends on the version/build you are currently running.

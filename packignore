@@ -25,3 +25,4 @@ vendor\git-prompt.sh
 config\user-*
 clink_history*
 *.log
+frontend

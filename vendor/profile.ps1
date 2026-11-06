@@ -130,6 +130,21 @@ if (Get-Module PSReadline -ErrorAction "SilentlyContinue") {
     }
 }
 
+# Cmder window (frontend/) integration: slash commands that talk to the window
+#   /settings  open the settings panel    /theme <name>  switch theme    /new  shell picker
+if ($env:CMDER_UI) {
+    function global:Send-CmderUIRequest {
+        param([string]$Request = 'settings')
+        [Console]::Write("$([char]0x1B)]7337;$Request$([char]0x1B)\")
+    }
+    Set-Item -Path 'function:global:/settings' -Value { Send-CmderUIRequest 'settings' }
+    Set-Item -Path 'function:global:/new' -Value { Send-CmderUIRequest 'palette' }
+    Set-Item -Path 'function:global:/theme' -Value {
+        param([string]$Name)
+        if ($Name) { Send-CmderUIRequest "theme=$Name" }
+    }
+}
+
 # Pre-assign default prompt hooks so the first run of Cmder gets a working prompt
 $env:gitLoaded = $null
 [ScriptBlock]$PrePrompt = {}
@@ -234,7 +249,7 @@ if ( $(Get-Command prompt).Definition -match 'PS \$\(\$executionContext.SessionS
         $realLastExitCode = $LastExitCode
 
         # Terminal-specific escape sequences for Windows Terminal and ConEmu
-        if ($env:WT_SESSION -or $env:ConEmuPID) {
+        if ($env:WT_SESSION -or $env:ConEmuPID -or $env:CMDER_UI) {
             # Emit OSC 133;D to mark the end of command execution with exit code
             if ($env:WT_SESSION) {
                 Microsoft.PowerShell.Utility\Write-Host -NoNewline "$([char]0x1B)]133;D;$realLastExitCode$([char]7)"

@@ -223,8 +223,12 @@ goto :SKIP_CLINK
     :: Revert back to plain cmd.exe prompt without clink
     prompt $E[1;32;49m$P$S$_$E[1;30;49mλ$S$E[0m
 
-    :: Add Windows Terminal shell integration support (OSC 133 sequences)
-    if defined WT_SESSION (prompt $e]133;D$e\$e]133;A$e\$e]9;9;$P$e\%PROMPT%$e]133;B$e\)
+    :: Add Windows Terminal and Cmder window shell integration support (OSC 133 and 9;9 sequences)
+    set "CMDER_OSC_PROMPT="
+    if defined WT_SESSION set "CMDER_OSC_PROMPT=1"
+    if defined CMDER_UI set "CMDER_OSC_PROMPT=1"
+    if defined CMDER_OSC_PROMPT (prompt $e]133;D$e\$e]133;A$e\$e]9;9;$P$e\%PROMPT%$e]133;B$e\)
+    set "CMDER_OSC_PROMPT="
 
     chcp %cp%>nul
 

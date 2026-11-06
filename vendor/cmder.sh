@@ -97,3 +97,16 @@ fi
 if [ -f "${HOME}/.bashrc" ] ; then
     . "${HOME}/.bashrc"
 fi
+
+# Cmder window (frontend/) integration: `cmder-ui settings | new | theme <name>`
+if [ -n "${CMDER_UI}" ] ; then
+  cmder_ui() {
+    case "${1:-settings}" in
+      settings) printf '\033]7337;settings\033\' ;;
+      new) printf '\033]7337;palette\033\' ;;
+      theme) [ -n "$2" ] && printf '\033]7337;theme=%s\033\' "$2" ;;
+      *) echo "usage: cmder-ui [settings|new|theme <name>]" >&2 ;;
+    esac
+  }
+  alias cmder-ui='cmder_ui'
+fi
