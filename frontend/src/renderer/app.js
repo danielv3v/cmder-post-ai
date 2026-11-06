@@ -49,6 +49,7 @@ async function main() {
     },
     toast,
     confirm: confirmDialog,
+    confirmPaste,
   };
   ctx.theme = resolveTheme(ctx);
   if (init.dev) window.__cmder = ctx; // inspection hook for `npm run dev`
@@ -190,7 +191,7 @@ function setupShortcuts(ctx) {
   const global = new Set(['Ctrl+t', 'Ctrl+,', 'Ctrl+Tab', 'Ctrl+Shift+Tab', 'F11']);
 
   window.addEventListener('keydown', (e) => {
-    if (e.isComposing) return;
+    if (e.isComposing || document.body.classList.contains('modal-open')) return;
     const combo = comboOf(e);
     if (combo === 'Escape' && !ctx.palette.isOpen && !ws.renaming) {
       const target = ctx.settingsPanel.isOpen ? ctx.settingsPanel : ctx.search.isOpen ? ctx.search : null;
@@ -354,25 +355,60 @@ function toast(message, ms = 3200) {
   toastTimer = setTimeout(() => el.classList.remove('show'), ms);
 }
 
-function confirmDialog(message, okLabel = 'OK') {
+function confirmDialog(message, okLabel = 'OK', { title, detail } = {}) {
   return new Promise((resolve) => {
+    let settled = false;
     const done = (v) => {
+      if (settled) return;
+      settled = true;
       root.remove();
+      document.body.classList.remove('modal-open');
       resolve(v);
     };
     const ok = h('button', { class: 'btn primary', onclick: () => done(true) }, okLabel);
+    const cancel = h('button', { class: 'btn', onclick: () => done(false) }, 'Cancel');
     const root = h('div', { class: 'overlay open confirm-overlay' },
       h('div', { class: 'backdrop', onclick: () => done(false) }),
-      h('div', { class: 'confirm' },
+      h('div', { class: 'confirm', role: 'alertdialog' },
+        title ? h('h3', null, title) : null,
         h('p', null, message),
+        detail || null,
         h('div', { class: 'confirm-actions' },
-          h('button', { class: 'btn', onclick: () => done(false) }, 'Cancel'),
+          cancel,
           ok)));
     root.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') done(false);
+      if (e.key === 'Escape' || (e.key === 'Enter' && e.target === cancel)) {
+        e.preventDefault();
+        done(false);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        done(true);
+      }
     });
+    // While a dialog is up, keys belong to it (no shortcuts, nothing reaches the shell).
+    document.body.classList.add('modal-open');
     document.body.append(root);
     ok.focus();
+  });
+}
+
+// Asked before text with line breaks reaches a shell that would run each line
+// as it arrives (cmd never turns on bracketed paste).
+const PREVIEW_LINES = 8;
+function confirmPaste(text) {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  const endsWithEnter = lines.length > 1 && lines[lines.length - 1] === '';
+  if (endsWithEnter) lines.pop();
+  const count = lines.length;
+  const shown = lines.slice(0, PREVIEW_LINES).map((l) => (l.length > 160 ? `${l.slice(0, 160)}…` : l));
+  if (count > PREVIEW_LINES) shown.push(`… ${count - PREVIEW_LINES} more line${count - PREVIEW_LINES === 1 ? '' : 's'}`);
+  const title = count === 1 ? 'Paste and run this line?' : `Paste ${count} lines?`;
+  const message = count === 1
+    ? 'The text ends with a line break, so the shell will run it as soon as it is pasted.'
+    : 'The shell will run each line as soon as it arrives.';
+  return confirmDialog(message, 'Paste', {
+    title,
+    detail: h('pre', { class: 'paste-preview' }, shown.join('\n')),
   });
 }
 

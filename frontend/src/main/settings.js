@@ -27,6 +27,7 @@ const DEFAULTS = Object.freeze({
   cmderRoot: '',
   copyOnSelect: true,
   rightClickPaste: true,
+  confirmMultilinePaste: true,
   gpuAcceleration: true,
   scrollback: 10000,
   profiles: [],

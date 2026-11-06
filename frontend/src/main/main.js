@@ -10,6 +10,8 @@ const { resolveCmderRoot, buildProfiles, shellEnv } = require('./profiles');
 const { THEMES } = require('../shared/themes');
 
 const DEV = process.argv.includes('--dev');
+// Keep a source run's Chromium profile apart from the packaged exe's, so both can run at once.
+if (!app.isPackaged) app.setPath('userData', `${app.getPath('userData')}-dev`);
 const APP_DIR = path.resolve(__dirname, '..', '..');
 
 // The Cmder folder that hosts this app. From source, frontend/ sits in the Cmder
@@ -129,6 +131,9 @@ function spawnPty({ profileId, cwd, cols, rows }) {
   });
   p.onExit(({ exitCode }) => {
     entry.closed = true;
+    // Shells the app closed itself (pane closed, window reloading) were already
+    // removed from the map; only report exits the UI doesn't know about yet.
+    if (ptys.get(id) !== entry) return;
     flush(id);
     ptys.delete(id);
     send('pty:exit', id, exitCode);
@@ -136,11 +141,17 @@ function spawnPty({ profileId, cwd, cols, rows }) {
   return { id, profile: publicProfile(profile), cwd: startDir };
 }
 
+function killPty(id) {
+  const entry = ptys.get(id);
+  if (!entry) return;
+  ptys.delete(id);
+  entry.closed = true;
+  clearTimeout(entry.timer);
+  try { entry.p.kill(); } catch { /* already gone */ }
+}
+
 function killAll() {
-  for (const { p } of ptys.values()) {
-    try { p.kill(); } catch { /* already gone */ }
-  }
-  ptys.clear();
+  for (const id of [...ptys.keys()]) killPty(id);
 }
 
 // ---------------------------------------------------------------- window
@@ -267,12 +278,7 @@ function registerIpc() {
     if (!entry || cols < 2 || rows < 1) return;
     try { entry.p.resize(cols, rows); } catch { /* exited mid-resize */ }
   });
-  ipcMain.on('pty:kill', (_e, id) => {
-    const entry = ptys.get(id);
-    if (entry) {
-      try { entry.p.kill(); } catch { /* already gone */ }
-    }
-  });
+  ipcMain.on('pty:kill', (_e, id) => killPty(id));
 
   ipcMain.handle('clipboard:read', () => clipboard.readText());
   ipcMain.on('clipboard:write', (_e, text) => clipboard.writeText(String(text ?? '')));

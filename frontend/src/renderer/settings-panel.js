@@ -101,6 +101,7 @@ export class SettingsPanel {
       section('Behavior',
         row('Copy on select', this.switchControl('copyOnSelect')),
         row('Right-click pastes', this.switchControl('rightClickPaste')),
+        row('Confirm multi-line paste', this.switchControl('confirmMultilinePaste'), 'Each line runs as a command in cmd'),
         row('GPU rendering', this.switchControl('gpuAcceleration'), 'Turn off if text looks wrong'),
         row('Scrollback', this.stepper('scrollback', { min: 1000, max: 100000, step: 1000, unit: '' }))),
       h('p', { class: 'drawer-note' }, 'Type ', h('code', null, '/settings'), ' in any Cmder shell to open this panel.'),

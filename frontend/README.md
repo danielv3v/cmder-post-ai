@@ -52,6 +52,8 @@ The shells load Cmder from the folder that contains `frontend/`. That folder nee
 
 Drag a divider to resize panes; double-click it to even them out. Dropping files on the window pastes their paths.
 
+Pasting text that contains a line break asks first, because cmd runs each line the moment it arrives. Shells that turn on bracketed paste, such as bash, get the text as one block and aren't asked. Turn it off under **Settings → Behavior → Confirm multi-line paste**.
+
 ## Slash commands
 
 Inside the window, the shells understand:

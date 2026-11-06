@@ -222,7 +222,18 @@ export class Pane {
 
   async paste(text) {
     const value = text ?? (await window.cmder.clipboard.read());
-    if (value) this.term.paste(value);
+    if (!value) return;
+    // A line break works like pressing Enter. Shells that turn on bracketed paste
+    // (PSReadLine, bash) receive the text as one block, so only ask for the others.
+    const multiline = /[\r\n]/.test(value);
+    if (multiline && this.ctx.settings.confirmMultilinePaste && !this.term.modes.bracketedPasteMode) {
+      const ok = await this.ctx.confirmPaste(value);
+      if (!ok || this.exited) {
+        this.term.focus();
+        return;
+      }
+    }
+    this.term.paste(value);
     this.term.focus();
   }
 
